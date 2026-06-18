@@ -1,0 +1,1840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+    <title>AT&T Call Center — Authentication Training Simulator</title>
+    <style>
+        :root {
+            --bg: #080f1a;
+            --panel-bg: #0e1a2d;
+            --card-bg: #111d35;
+            --border: #1b2a41;
+            --text: #e2e8f0;
+            --text-secondary: #8ea4c0;
+            --text-muted: #5a7290;
+            --att-blue: #009fdb;
+            --att-blue-hover: #0088bb;
+            --att-orange: #ff8c00;
+            --success: #2ecc71;
+            --success-bg: #0d2618;
+            --warning: #f0a030;
+            --warning-bg: #281c08;
+            --danger: #e74c3c;
+            --danger-bg: #280e0e;
+            --shield-silver: #c0c5ce;
+            --shield-red: #d43d3d;
+            --input-bg: #060d18;
+            --radius: 8px;
+            --radius-sm: 6px;
+            --font-mono: 'SF Mono', 'Cascadia Code', 'Consolas', 'Monaco', monospace;
+            --font-sans: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        html,
+        body {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+        body {
+            font-family: var(--font-sans);
+            background: #000;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-font-smoothing: antialiased;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* iOS/Safari button click fix: prevent emoji/icon children from intercepting touches */
+        button *,
+        .btn *,
+        .tab-btn *,
+        .btn-new-call *,
+        .btn-red-action *,
+        .search-chip *,
+        .search-group button * {
+            pointer-events: none !important;
+        }
+
+        /* Ensure buttons themselves catch all touches */
+        button,
+        .btn,
+        .tab-btn,
+        .btn-new-call,
+        .btn-red-action,
+        .search-chip,
+        .search-group button,
+        .cbr-overlay .btn-split button,
+        .btn-yes,
+        .btn-no {
+            touch-action: manipulation !important;
+        }
+
+        .mobile-container {
+            width: 100%;
+            max-width: 420px;
+            height: 100%;
+            height: 100dvh;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 0 60px rgba(0, 0, 0, 0.8);
+        }
+        .mobile-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: #0b1420;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+            min-height: 54px;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .globe-logo {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: var(--att-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            color: #fff;
+            font-weight: 800;
+            pointer-events: none;
+        }
+        .header-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            letter-spacing: 0.3px;
+        }
+        .header-right .shield-icon {
+            width: 32px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            position: relative;
+            pointer-events: none;
+        }
+        .shield-icon .shield-base {
+            color: var(--shield-silver);
+        }
+        .status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--att-orange);
+            position: absolute;
+            top: 1px;
+            right: 1px;
+            animation: pulse-dot 1.5s infinite;
+        }
+        @keyframes pulse-dot {
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 140, 0, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 0 7px rgba(255, 140, 0, 0);
+            }
+        }
+        .action-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: #0d1626;
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .btn-new-call {
+            padding: 8px 14px;
+            background: var(--att-blue);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.15s;
+            font-family: var(--font-sans);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            touch-action: manipulation;
+        }
+        .btn-new-call:active {
+            background: var(--att-blue-hover);
+            box-shadow: 0 2px 10px rgba(0, 159, 219, 0.3);
+        }
+        .search-group {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 0 6px 0 12px;
+            transition: border-color 0.15s;
+        }
+        .search-group:focus-within {
+            border-color: var(--att-blue);
+        }
+        .search-group input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 8px 0;
+            color: var(--text);
+            font-size: 11px;
+            outline: none;
+            font-family: var(--font-sans);
+            letter-spacing: 0.2px;
+            -webkit-appearance: none;
+            border-radius: 0;
+        }
+        .search-group input::placeholder {
+            color: var(--text-muted);
+            font-size: 10px;
+        }
+        .search-group button {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            padding: 6px 8px;
+            border-radius: 50%;
+            font-size: 14px;
+            transition: all 0.15s;
+            touch-action: manipulation;
+        }
+        .search-group button:active {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.06);
+        }
+        .customer-info-grid {
+            padding: 10px 16px;
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            flex-shrink: 0;
+        }
+        .info-row {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            font-size: 12px;
+        }
+        .info-row .info-label {
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            min-width: 42px;
+            text-align: right;
+        }
+        .info-row .info-value {
+            color: var(--text);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            letter-spacing: 0.2px;
+        }
+        .info-row .info-value.masked {
+            color: var(--text-muted);
+            letter-spacing: 1px;
+        }
+        .relation-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-size: 7px;
+            font-weight: 700;
+            background: #1a2030;
+            color: var(--att-orange);
+            border: 1px solid #302210;
+            margin-left: 4px;
+            font-family: var(--font-sans);
+        }
+        .tab-nav {
+            display: flex;
+            background: var(--card-bg);
+            border-bottom: 2px solid var(--border);
+            flex-shrink: 0;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 11px 6px;
+            text-align: center;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.4px;
+            color: var(--text-muted);
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            transition: all 0.15s;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            font-family: var(--font-sans);
+            touch-action: manipulation;
+        }
+        .tab-btn.active {
+            color: #fff;
+            border-bottom-color: var(--att-blue);
+            background: rgba(0, 159, 219, 0.06);
+        }
+        .tab-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-height: 0;
+            -webkit-overflow-scrolling: touch;
+        }
+        .tab-panel {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .tab-panel.active {
+            display: flex;
+        }
+        .input-field {
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            color: var(--text);
+            font-size: 13px;
+            font-family: var(--font-mono);
+            letter-spacing: 2px;
+            outline: none;
+            width: 100%;
+            transition: border-color 0.15s;
+            -webkit-appearance: none;
+        }
+        .input-field:focus {
+            border-color: var(--att-blue);
+        }
+        .input-field::placeholder {
+            color: var(--text-muted);
+            letter-spacing: 1px;
+            font-size: 11px;
+        }
+        select.input-field {
+            letter-spacing: 0.5px;
+            cursor: pointer;
+        }
+        .btn-row {
+            display: flex;
+            gap: 8px;
+        }
+        .btn {
+            padding: 10px 16px;
+            border-radius: var(--radius-sm);
+            border: none;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            transition: all 0.15s;
+            font-family: var(--font-sans);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            white-space: nowrap;
+            flex: 1;
+            touch-action: manipulation;
+        }
+        .btn-blue {
+            background: var(--att-blue);
+            color: #fff;
+        }
+        .btn-blue:active {
+            background: var(--att-blue-hover);
+            box-shadow: 0 2px 12px rgba(0, 159, 219, 0.3);
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+        }
+        .btn-outline:active {
+            background: var(--card-bg);
+            border-color: var(--text-muted);
+        }
+        .btn-success {
+            background: var(--success);
+            color: #fff;
+        }
+        .btn-success:active {
+            background: #27ae60;
+        }
+        .btn-danger {
+            background: var(--danger);
+            color: #fff;
+        }
+        .btn-danger:active {
+            background: #c0392b;
+        }
+        .btn-warning {
+            background: var(--att-orange);
+            color: #000;
+            font-weight: 700;
+        }
+        .btn-warning:active {
+            background: #e07a00;
+        }
+        .btn-sm {
+            padding: 8px 13px;
+            font-size: 10px;
+            flex: none;
+        }
+        .btn-block {
+            width: 100%;
+            flex: none;
+        }
+        .chat-log {
+            flex: 1;
+            min-height: 80px;
+            max-height: 140px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 8px 10px;
+            background: var(--input-bg);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .chat-msg {
+            max-width: 82%;
+            padding: 6px 9px;
+            border-radius: 8px;
+            font-size: 10px;
+            line-height: 1.4;
+            word-break: break-word;
+        }
+        .chat-msg.agent {
+            align-self: flex-end;
+            background: #0b2d4a;
+            color: #c8ddf5;
+        }
+        .chat-msg.customer {
+            align-self: flex-start;
+            background: var(--card-bg);
+            color: #dde4ef;
+            border: 1px solid var(--border);
+        }
+        .chat-msg.system {
+            align-self: center;
+            background: transparent;
+            color: var(--text-muted);
+            font-size: 8px;
+            font-style: italic;
+            text-align: center;
+            max-width: 90%;
+        }
+        .chat-input-row {
+            display: flex;
+            gap: 6px;
+            flex-shrink: 0;
+            padding: 0 14px;
+        }
+        .chat-input-row input {
+            flex: 1;
+            background: var(--input-bg);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 8px 12px;
+            color: var(--text);
+            font-size: 10px;
+            outline: none;
+            font-family: var(--font-sans);
+            -webkit-appearance: none;
+            border-radius: 20px;
+        }
+        .chat-input-row input::placeholder {
+            color: var(--text-muted);
+            font-size: 9px;
+        }
+        .chat-input-row button {
+            border-radius: 50%;
+            width: 34px;
+            height: 34px;
+            padding: 0;
+            background: var(--att-blue);
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            flex-shrink: 0;
+            touch-action: manipulation;
+        }
+        .chat-input-row button:active {
+            background: var(--att-blue-hover);
+        }
+        .bottom-action-bar {
+            flex-shrink: 0;
+            padding: 8px 14px 12px;
+            background: var(--bg);
+        }
+        .btn-red-action {
+            width: 100%;
+            padding: 13px;
+            background: #d43d3d;
+            color: #fff;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+            cursor: pointer;
+            text-transform: uppercase;
+            font-family: var(--font-sans);
+            box-shadow: 0 3px 14px rgba(212, 61, 61, 0.3);
+            transition: background 0.15s, transform 0.1s;
+            touch-action: manipulation;
+        }
+        .btn-red-action:active {
+            background: #b83232;
+            transform: scale(0.98);
+        }
+        .cbr-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            z-index: 50;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 24px;
+            text-align: center;
+        }
+        .cbr-overlay.show {
+            display: flex;
+        }
+        .cbr-overlay h2 {
+            font-size: 18px;
+            color: #fff;
+        }
+        .cbr-overlay p {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        .cbr-overlay .btn-split {
+            display: flex;
+            gap: 12px;
+            width: 100%;
+            max-width: 260px;
+        }
+        .cbr-overlay .btn-split button {
+            flex: 1;
+            padding: 12px;
+            border-radius: var(--radius);
+            font-size: 13px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            font-family: var(--font-sans);
+            touch-action: manipulation;
+        }
+        .btn-yes {
+            background: var(--success);
+            color: #fff;
+        }
+        .btn-no {
+            background: var(--danger);
+            color: #fff;
+        }
+        .incoming-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            gap: 14px;
+            text-align: center;
+            padding: 20px;
+        }
+        .incoming-ring {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: var(--card-bg);
+            border: 3px solid var(--att-blue);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 26px;
+            animation: ringPulse 1s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes ringPulse {
+            0%,
+            100% {
+                transform: scale(1);
+                box-shadow: 0 0 0 0 rgba(0, 159, 219, 0.4);
+            }
+            30% {
+                transform: scale(1.07);
+                box-shadow: 0 0 0 14px rgba(0, 159, 219, 0);
+            }
+            60% {
+                transform: scale(1);
+            }
+        }
+        .caller-id-display {
+            font-family: var(--font-mono);
+            font-size: 20px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 2px;
+            background: var(--input-bg);
+            padding: 8px 20px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+        }
+        .hidden {
+            display: none !important;
+        }
+        .eval-score-ring {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            margin: 0 auto 8px;
+            border: 3px solid;
+            pointer-events: none;
+        }
+        .eval-score-ring.good {
+            border-color: var(--success);
+            color: var(--success);
+            background: var(--success-bg);
+        }
+        .eval-score-ring.ok {
+            border-color: var(--warning);
+            color: var(--warning);
+            background: var(--warning-bg);
+        }
+        .eval-score-ring.poor {
+            border-color: var(--danger);
+            color: var(--danger);
+            background: var(--danger-bg);
+        }
+        .eval-item {
+            padding: 6px 8px;
+            border-radius: var(--radius-sm);
+            margin-bottom: 3px;
+            font-size: 9px;
+            display: flex;
+            gap: 6px;
+            line-height: 1.3;
+        }
+        .eval-item.pos {
+            background: var(--success-bg);
+            border-left: 2px solid var(--success);
+        }
+        .eval-item.warn {
+            background: var(--warning-bg);
+            border-left: 2px solid var(--warning);
+        }
+        .eval-item.neg {
+            background: var(--danger-bg);
+            border-left: 2px solid var(--danger);
+        }
+        .divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 8px 0;
+        }
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--att-blue);
+            color: #fff;
+            padding: 9px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 10px;
+            z-index: 200;
+            animation: toastIn 0.3s ease, toastOut 0.4s ease 1.8s forwards;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            white-space: nowrap;
+            pointer-events: none;
+        }
+        @keyframes toastIn {
+            from {
+                opacity: 0;
+                transform: translateX(-50%) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(-50%) translateY(0);
+            }
+        }
+        @keyframes toastOut {
+            to {
+                opacity: 0;
+                transform: translateX(-50%) translateY(-10px);
+            }
+        }
+        .fullscreen-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex: 1;
+            padding: 20px;
+            text-align: center;
+            gap: 10px;
+        }
+        .search-panel-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            z-index: 40;
+            display: none;
+            flex-direction: column;
+            padding: 16px;
+            gap: 10px;
+        }
+        .search-panel-overlay.show {
+            display: flex;
+        }
+        .search-panel-overlay .search-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .search-panel-overlay .search-header h3 {
+            font-size: 13px;
+            color: #fff;
+        }
+        .search-chip-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .search-chip {
+            padding: 6px 11px;
+            border-radius: 16px;
+            font-size: 9px;
+            font-weight: 600;
+            border: 1px solid var(--border);
+            background: var(--input-bg);
+            color: var(--text-secondary);
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+        .search-chip.selected {
+            border-color: var(--att-blue);
+            background: rgba(0, 159, 219, 0.15);
+            color: #fff;
+        }
+        .inline-search-result {
+            font-size: 10px;
+            color: var(--text-secondary);
+            padding: 2px 0;
+            min-height: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-container" id="mobileContainer">
+        <header class="mobile-header">
+            <div class="header-left">
+                <div class="globe-logo">🌐</div>
+                <span class="header-title">AT&T</span>
+            </div>
+            <div class="header-right">
+                <div class="shield-icon">
+                    <span class="shield-base">🛡️</span>
+                    <span class="status-dot" id="statusDot"></span>
+                </div>
+            </div>
+        </header>
+        <div class="action-bar" id="actionBar">
+            <button class="btn-new-call" data-action="new-call">📞 New Call</button>
+            <div class="search-group">
+                <input type="text" id="inlineSearchInput" placeholder="Account/Phone...">
+                <button data-action="inline-search">🔍</button>
+            </div>
+        </div>
+        <div id="inlineSearchResult" class="inline-search-result" style="padding: 0 14px; display: none;"></div>
+        <div class="customer-info-grid" id="customerInfoGrid">
+            <div class="info-row"><span class="info-label">Name</span><span class="info-value masked" id="custNameDisplay">---</span></div>
+            <div class="info-row"><span class="info-label">Phone</span><span class="info-value masked" id="custPhoneDisplay">---</span></div>
+            <div class="info-row"><span class="info-label">Email</span><span class="info-value masked" id="custEmailDisplay">---</span></div>
+        </div>
+        <div class="tab-nav" id="tabNav">
+            <button class="tab-btn active" data-action="tab-passcode">Passcode</button>
+            <button class="tab-btn" data-action="tab-otp">OTP</button>
+            <button class="tab-btn" data-action="tab-bbtech">BB tech</button>
+        </div>
+        <div class="tab-content" id="tabContent">
+            <div class="tab-panel active" id="tabPasscodePanel">
+                <input type="password" class="input-field" id="passcodeInput" placeholder="4-digit pass code" maxlength="4">
+                <button class="btn btn-blue btn-block" data-action="submit-passcode">Verify Passcode</button>
+            </div>
+            <div class="tab-panel" id="tabOtpPanel">
+                <select class="input-field" id="otpMethodSelect"><option value="">-- Select contact method --</option></select>
+                <div class="btn-row">
+                    <button class="btn btn-blue" data-action="send-otp">📤 Send</button>
+                    <button class="btn btn-blue" data-action="submit-otp">✓ Verify</button>
+                </div>
+                <input type="text" class="input-field" id="otpInput" placeholder="6-digit OTP" maxlength="6">
+                <div id="otpStatus" style="font-size:9px;color:var(--text-muted);"></div>
+            </div>
+            <div class="tab-panel" id="tabBbtechPanel">
+                <div id="bbTechInner"></div>
+            </div>
+        </div>
+        <div class="chat-log" id="chatLog">
+            <div class="chat-msg system">Call connected. Waiting for interaction.</div>
+        </div>
+        <div class="chat-input-row">
+            <input type="text" id="chatInput" placeholder="Type message to customer...">
+            <button data-action="send-chat">➤</button>
+        </div>
+        <div class="bottom-action-bar">
+            <button class="btn-red-action" data-action="copy-prompt">📋 Copy AI Prompt</button>
+        </div>
+        <div class="cbr-overlay" id="cbrOverlay">
+            <h2>CBR Call</h2>
+            <p>Did you get permission from the account holder?</p>
+            <div class="btn-split">
+                <button class="btn-yes" data-action="cbr-yes">Yes</button>
+                <button class="btn-no" data-action="cbr-no">No</button>
+            </div>
+        </div>
+        <div class="search-panel-overlay" id="searchOverlay">
+            <div class="search-header">
+                <h3>Search Account</h3>
+                <button class="btn btn-outline btn-sm" data-action="close-search">✕ Close</button>
+            </div>
+            <div class="search-chip-row" id="searchChips">
+                <span class="search-chip selected" data-action="search-chip" data-search="account">Account #</span>
+                <span class="search-chip" data-action="search-chip" data-search="phone">Phone</span>
+                <span class="search-chip" data-action="search-chip" data-search="address">Address</span>
+                <span class="search-chip" data-action="search-chip" data-search="name">Name</span>
+            </div>
+            <input type="text" class="input-field" id="searchInput" placeholder="Search...">
+            <button class="btn btn-blue btn-block" data-action="search-submit">Search</button>
+            <div id="searchResult" style="font-size:10px;margin-top:4px;"></div>
+        </div>
+        <div id="dynamicScreenArea" style="display:none;flex:1;overflow-y:auto;"></div>
+    </div>
+    <div id="toastContainer"></div>
+    <script>
+        (function() {
+            const App = {
+                active: false,
+                scenario: null,
+                subScenario: null,
+                isFamily: false,
+                familyRel: null,
+                isWrongAccount: false,
+                wrongAccountData: null,
+                hasMemoryFailure: false,
+                customerData: null,
+                personality: null,
+                authState: 'pending',
+                ivrAuthenticated: false,
+                passcodeAttempts: 0,
+                otpSent: false,
+                otpValue: null,
+                otpAttempts: 0,
+                searchDone: false,
+                bbTechActive: false,
+                bbTechState: 'start',
+                cbrCallAttempted: false,
+                passcodeChanged: false,
+                ownerConfirmed: null,
+                securityViolations: [],
+                correctActions: [],
+                mistakes: [],
+                warnings: [],
+                actionLog: [],
+                convLog: [],
+                callerId: null,
+                currentTab: 'passcode',
+                wrongAccountDetected: false,
+                bbBillOk: false,
+                bbModemOk: false,
+                currentScreen: 'screen-start',
+            };
+
+            function resetApp() {
+                Object.assign(App, {
+                    active: false,
+                    scenario: null,
+                    subScenario: null,
+                    isFamily: false,
+                    familyRel: null,
+                    isWrongAccount: false,
+                    wrongAccountData: null,
+                    hasMemoryFailure: false,
+                    customerData: null,
+                    personality: null,
+                    authState: 'pending',
+                    ivrAuthenticated: false,
+                    passcodeAttempts: 0,
+                    otpSent: false,
+                    otpValue: null,
+                    otpAttempts: 0,
+                    searchDone: false,
+                    bbTechActive: false,
+                    bbTechState: 'start',
+                    cbrCallAttempted: false,
+                    passcodeChanged: false,
+                    ownerConfirmed: null,
+                    securityViolations: [],
+                    correctActions: [],
+                    mistakes: [],
+                    warnings: [],
+                    actionLog: [],
+                    convLog: [],
+                    callerId: null,
+                    currentTab: 'passcode',
+                    wrongAccountDetected: false,
+                    bbBillOk: false,
+                    bbModemOk: false,
+                    currentScreen: 'screen-start',
+                });
+            }
+            const fNames = ['Michael', 'James', 'Sarah', 'Jennifer', 'Robert', 'Emily', 'David', 'Jessica', 'Christopher',
+                'Amanda', 'Daniel', 'Melissa', 'Matthew', 'Nicole', 'Andrew', 'Stephanie'
+            ];
+            const lNames = ['Anderson', 'Martinez', 'Thompson', 'Richardson', 'Williams', 'Johnson', 'Brown', 'Davis',
+                'Miller', 'Wilson', 'Moore', 'Taylor', 'Jackson', 'Martin', 'Lee', 'Harris'
+            ];
+            const streets = ['123 Maple St', '456 Oak Ave', '789 Pine Rd', '321 Elm Dr', '654 Cedar Ln', '987 Birch Ct',
+                '159 Spruce Wy', '753 Walnut Blvd', '135 Cherry Lane'
+            ];
+            const cities = ['Springfield', 'Riverside', 'Lakewood', 'Hillcrest', 'Brookfield', 'Pine Valley', 'Oak Harbor',
+                'Cedar Grove', 'Sunnyvale'
+            ];
+            const states = ['IL', 'CA', 'TX', 'FL', 'NY', 'OH', 'PA', 'MI', 'GA', 'NC'];
+            const domains = ['gmail.com', 'yahoo.com', 'outlook.com', 'icloud.com', 'att.net', 'protonmail.com'];
+            const secQs = ['What was the name of your first pet?', 'What is your mother\'s maiden name?',
+                'What city were you born in?', 'What was the make of your first car?',
+                'What is the name of your favorite teacher?', 'What street did you grow up on?'
+            ];
+            const secAs = ['Max', 'Johnson', 'Chicago', 'Toyota', 'Mrs. Parker', 'Maple Lane', 'Buddy', 'Williams',
+                'Denver', 'Honda', 'Mr. Thompson', 'Oak Street'
+            ];
+            const personalities = ['Calm', 'Calm', 'Calm', 'Confused', 'Confused', 'Confused', 'Neutral', 'Neutral',
+                'Slightly frustrated', 'Slightly frustrated', 'Angry', 'In a hurry', 'Impatient'
+            ];
+            const scenarios = [{ code: 'A1', name: 'IVR Authenticated' }, { code: 'A2', name: 'Partial IVR Authentication' },
+                { code: 'A3', name: 'Skipped IVR' }
+            ];
+            const subScenarios = ['B1', 'B2', 'B3', 'B4'];
+            const familyRels = ['Son calling for father', 'Wife calling for husband', 'Husband calling for wife',
+                'Authorized family member'
+            ];
+
+            function genCustomer() {
+                const fn = fNames[Math.floor(Math.random() * fNames.length)];
+                const ln = lNames[Math.floor(Math.random() * lNames.length)];
+                const phRaw = String(Math.floor(Math.random() * 9000000000) + 1000000000);
+                const phFmt = `(${phRaw.slice(0,3)}) ${phRaw.slice(3,6)}-${phRaw.slice(6,10)}`;
+                const emUser = fn.toLowerCase() + (Math.random() > 0.5 ? '.' + ln.toLowerCase() : Math.floor(Math.random() *
+                    99));
+                const em = emUser + '@' + domains[Math.floor(Math.random() * domains.length)];
+                const street = streets[Math.floor(Math.random() * streets.length)];
+                const city = cities[Math.floor(Math.random() * cities.length)];
+                const state = states[Math.floor(Math.random() * states.length)];
+                const zip = String(Math.floor(Math.random() * 90000) + 10000);
+                const addr = `${street}, ${city}, ${state} ${zip}`;
+                const pc = String(Math.floor(Math.random() * 9000) + 1000);
+                const acct = 'ATT-' + String(Math.floor(Math.random() * 90000000) + 10000000);
+                const modem = 'SN-' + String(Math.floor(Math.random() * 900000000) + 100000000).slice(0, 10);
+                const bill = '$' + (Math.floor(Math.random() * 18000) / 100 + 34.99).toFixed(2);
+                const cbr = 'CBR-' + String(Math.floor(Math.random() * 900000) + 100000);
+                const sq = secQs[Math.floor(Math.random() * secQs.length)];
+                const sa = secAs[Math.floor(Math.random() * secAs.length)];
+                return {
+                    firstName: fn,
+                    lastName: ln,
+                    phoneRaw: phRaw,
+                    phoneNumber: phFmt,
+                    email: em,
+                    address: addr,
+                    passCode: pc,
+                    accountNumber: acct,
+                    modemSerial: modem,
+                    lastBillAmount: bill,
+                    cbrNumber: cbr,
+                    securityQuestion: sq,
+                    securityAnswer: sa,
+                };
+            }
+
+            function maskVal(v, n = 3) { if (!v || v.length <= n) return v || '---'; return v.slice(0, n) + '*'.repeat(Math
+                    .max(v.length - n, 3)); }
+
+            function maskPhone(p) { const d = p.replace(/\D/g, ''); return d.length >= 10 ? '***-***-' + d.slice(-4) :
+                    '***-***-****'; }
+
+            function maskEmail(e) { const a = e.indexOf('@'); return a > 0 ? e.slice(0, Math.min(3, a)) + '****' + e.slice(a) :
+                    '****@****'; }
+
+            function updateCustomerBar(data) {
+                const d = data || App.customerData;
+                const nameEl = document.getElementById('custNameDisplay');
+                const phoneEl = document.getElementById('custPhoneDisplay');
+                const emailEl = document.getElementById('custEmailDisplay');
+                if (!d) return;
+                if (App.ivrAuthenticated || App.authState === 'success') {
+                    if (nameEl) { nameEl.textContent = d.firstName + ' ' + d.lastName;
+                        nameEl.classList.remove('masked'); }
+                    if (phoneEl) { phoneEl.textContent = d.phoneNumber;
+                        phoneEl.classList.remove('masked'); }
+                    if (emailEl) { emailEl.textContent = d.email;
+                        emailEl.classList.remove('masked'); }
+                } else {
+                    if (nameEl) { nameEl.textContent = maskVal(d.firstName) + ' ' + maskVal(d.lastName);
+                        nameEl.classList.add('masked'); }
+                    if (phoneEl) { phoneEl.textContent = maskPhone(d.phoneNumber);
+                        phoneEl.classList.add('masked'); }
+                    if (emailEl) { emailEl.textContent = maskEmail(d.email);
+                        emailEl.classList.add('masked'); }
+                }
+                if (App.isFamily && App.familyRel && nameEl) {
+                    nameEl.innerHTML = nameEl.textContent +
+                        ` <span class="relation-badge">${App.familyRel}</span>`;
+                }
+            }
+
+            function updateStatusDot(state) {
+                const dot = document.getElementById('statusDot');
+                if (!dot) return;
+                dot.style.background = state === 'Ready' ? '#2ecc71' : state.includes('Active') ? '#ff8c00' : '#e74c3c';
+            }
+
+            const staticElements = [
+                'tabNav', 'tabContent', 'chatLog', 'customerInfoGrid', 'actionBar',
+                'inlineSearchResult'
+            ];
+            const staticSelectors = ['.chat-input-row', '.bottom-action-bar'];
+
+            function showScreen(id) {
+                App.currentScreen = id;
+                const header = document.querySelector('.mobile-header');
+                const cbrOverlay = document.getElementById('cbrOverlay');
+                const searchOverlay = document.getElementById('searchOverlay');
+                const dynArea = document.getElementById('dynamicScreenArea');
+
+                if (cbrOverlay) cbrOverlay.classList.remove('show');
+                if (searchOverlay) searchOverlay.classList.remove('show');
+                if (header) header.style.display = 'flex';
+
+                staticElements.forEach(sid => { const el = document.getElementById(sid); if (el) el.style.display =
+                        'none'; });
+                staticSelectors.forEach(sel => { const el = document.querySelector(sel); if (el) el.style.display =
+                    'none'; });
+                if (dynArea) { dynArea.style.display = 'none';
+                    dynArea.innerHTML = ''; }
+
+                if (id === 'screen-active') {
+                    document.getElementById('actionBar').style.display = 'flex';
+                    document.getElementById('customerInfoGrid').style.display = 'flex';
+                    document.getElementById('tabNav').style.display = 'flex';
+                    document.getElementById('tabContent').style.display = 'flex';
+                    document.getElementById('chatLog').style.display = 'flex';
+                    document.querySelector('.chat-input-row').style.display = 'flex';
+                    document.querySelector('.bottom-action-bar').style.display = 'block';
+                    document.getElementById('inlineSearchResult').style.display = 'none';
+                    document.getElementById('passcodeInput').value = '';
+                    document.getElementById('otpInput').value = '';
+                    document.getElementById('otpStatus').textContent = '';
+                    document.getElementById('chatLog').innerHTML =
+                        '<div class="chat-msg system">Call connected. Start by asking for account holder name or passcode.</div>';
+                    populateOtpMethods();
+                    App.bbTechActive = false;
+                    App.bbTechState = 'start';
+                    App.bbBillOk = false;
+                    App.bbModemOk = false;
+                    App.currentTab = 'passcode';
+                    switchTab('passcode');
+                    renderBBTech();
+                    updateStatusDot('Call Active');
+                    if (App.ivrAuthenticated) {
+                        updateCustomerBar(App.customerData);
+                        addChatMsg('system', 'ℹ️ IVR authenticated. Full account details visible.');
+                    }
+                    if (App.isWrongAccount) addChatMsg('system',
+                        '⚠️ Possible wrong account opened. Verify name first.');
+                    if (App.hasMemoryFailure) addChatMsg('system',
+                    '⚠️ Customer may have memory difficulties.');
+                } else {
+                    if (dynArea) { dynArea.style.display = 'flex';
+                        dynArea.style.cssText = 'flex:1;overflow-y:auto;'; }
+                    let html = '';
+                    if (id === 'screen-start') {
+                        html =
+                            '<div class="fullscreen-center"><div style="font-size:40px;">🛡️</div><h2 style="font-size:16px;color:#fff;">AT&T Authentication Training</h2><p style="font-size:10px;color:var(--text-secondary);">All data is fictional. Mobile-first simulation.</p><button class="btn btn-blue" style="padding:12px 28px;font-size:13px;flex:none;" data-action="start-simulation">🆕 New Simulation</button></div>';
+                    } else if (id === 'screen-incoming') {
+                        html =
+                            '<div class="incoming-screen"><div class="incoming-ring">📞</div><div style="font-size:18px;font-weight:700;color:#fff;">Incoming Call</div><div style="font-size:10px;color:var(--text-secondary);">AT&T Customer Support Line</div><div class="caller-id-display" id="callerIdDisplay">------</div><button class="btn btn-blue" style="padding:12px 28px;font-size:13px;flex:none;" data-action="answer-call">📞 Answer Call</button></div>';
+                    } else if (id === 'screen-success') {
+                        html =
+                            '<div class="fullscreen-center"><div style="font-size:44px;">✅</div><h2 style="color:var(--success);font-size:15px;">Authentication Successful</h2><div id="passcodeChangeBlock" class="hidden" style="margin-top:6px;"><p style="font-weight:600;color:var(--att-orange);font-size:11px;">Are you speaking with the account owner?</p><div style="display:flex;gap:8px;justify-content:center;"><button class="btn btn-success btn-sm" data-action="owner-yes">Yes</button><button class="btn btn-outline btn-sm" data-action="owner-no">No</button></div><div id="changePasscodeOffer" class="hidden" style="margin-top:6px;"><p style="font-size:11px;">Change passcode?</p><button class="btn btn-warning btn-sm" data-action="change-passcode">Yes</button><button class="btn btn-outline btn-sm" data-action="finish-session">No</button></div></div><button class="btn btn-blue" style="margin-top:8px;flex:none;" data-action="view-evaluation">📊 View Evaluation</button></div>';
+                    } else if (id === 'screen-failure') {
+                        html =
+                            '<div class="fullscreen-center"><div style="font-size:44px;">🔒</div><h2 style="color:var(--danger);font-size:15px;">Authentication Failed</h2><p id="failureReason" style="font-size:10px;color:var(--text-secondary);">All verification methods exhausted.</p><button class="btn btn-blue" style="margin-top:8px;flex:none;" data-action="view-evaluation">📊 View Evaluation</button></div>';
+                    } else if (id === 'screen-evaluation') {
+                        html =
+                            '<div id="evalContent"></div><button class="btn btn-blue btn-block" data-action="reset-simulation" style="margin-top:10px;">🔄 New Simulation</button>';
+                        setTimeout(() => populateEvaluation(), 50);
+                    }
+                    if (dynArea) dynArea.innerHTML = html;
+                }
+            }
+
+            function switchTab(tabName) {
+                App.currentTab = tabName;
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+                const btn = document.querySelector(`[data-action="tab-${tabName}"]`);
+                if (btn) btn.classList.add('active');
+                if (tabName === 'passcode') document.getElementById('tabPasscodePanel').classList.add('active');
+                if (tabName === 'otp') { document.getElementById('tabOtpPanel').classList.add('active');
+                    populateOtpMethods(); }
+                if (tabName === 'bbtech') { document.getElementById('tabBbtechPanel').classList.add('active');
+                    renderBBTech(); }
+            }
+
+            function toast(msg) {
+                const c = document.getElementById('toastContainer');
+                const t = document.createElement('div');
+                t.className = 'toast';
+                t.textContent = msg;
+                c.appendChild(t);
+                setTimeout(() => t.remove(), 2400);
+            }
+
+            function populateOtpMethods() {
+                const sel = document.getElementById('otpMethodSelect');
+                if (!sel || !App.customerData) return;
+                const c = App.customerData;
+                sel.innerHTML = `<option value="">-- Select contact --</option>
+                <option value="phone">📱 ${maskPhone(c.phoneNumber)}</option>
+                <option value="email">📧 ${maskEmail(c.email)}</option>`;
+            }
+
+            function addChatMsg(type, text) {
+                const log = document.getElementById('chatLog');
+                if (!log) return;
+                const d = document.createElement('div');
+                d.className = `chat-msg ${type}`;
+                d.textContent = text;
+                log.appendChild(d);
+                App.convLog.push({ type, text, time: Date.now() });
+                log.scrollTop = log.scrollHeight;
+            }
+
+            function sendChatMessage() {
+                const input = document.getElementById('chatInput');
+                const msg = input.value.trim();
+                if (!msg || !App.active) return;
+                input.value = '';
+                addChatMsg('agent', msg);
+                processAgentMessage(msg);
+            }
+
+            function processAgentMessage(msg) {
+                const lower = msg.toLowerCase();
+                const c = App.customerData;
+                const p = App.personality;
+                const forgotPC = App.subScenario === 'B1' || (App.hasMemoryFailure && Math.random() < 0.7);
+                const unknownAcct = (App.scenario && App.scenario.code === 'A3' && !App.searchDone) || App.hasMemoryFailure;
+                const tonePrefix = {
+                    'Calm': '',
+                    'Confused': 'Um, ',
+                    'Neutral': '',
+                    'Slightly frustrated': '(sigh) ',
+                    'Angry': 'Look, ',
+                    'In a hurry': 'Quickly — ',
+                    'Impatient': '(sigh) ',
+                };
+                const toneSuffix = {
+                    'Calm': '',
+                    'Confused': ' I think?',
+                    'Neutral': '',
+                    'Slightly frustrated': ' Can we speed this up?',
+                    'Angry': ' This is ridiculous!',
+                    'In a hurry': ' I really need to go.',
+                    'Impatient': ' Can we move faster?',
+                };
+                const pre = tonePrefix[p] || '';
+                const suf = toneSuffix[p] || '';
+                if (lower.includes('name') || lower.includes('who is') || lower.includes('account holder')) {
+                    addChatMsg('customer', App.isFamily ?
+                        `${pre}The account holder is ${c.firstName} ${c.lastName}. I'm an authorized family member.${suf}` :
+                        `${pre}My name is ${c.firstName} ${c.lastName}.${suf}`);
+                    return;
+                }
+                if (lower.includes('passcode') || lower.includes('pass code') || lower.includes('pin') || lower.includes(
+                        '4-digit')) {
+                    addChatMsg('customer', forgotPC ?
+                        `${pre}I'm sorry, I forgot my pass code. I don't remember it at all.${suf}` :
+                        `${pre}Sure, it's ${c.passCode}.${suf}`);
+                    return;
+                }
+                if (lower.includes('otp') || lower.includes('one-time') || lower.includes('code sent')) {
+                    addChatMsg('customer', !App.otpSent ?
+                        `${pre}I haven't received any OTP yet. Can you send one?${suf}` :
+                        `${pre}The code I got is ${App.otpValue}.${suf}`);
+                    return;
+                }
+                if (lower.includes('security question') || lower.includes('pet') || lower.includes('maiden') || lower.includes(
+                        'born') || lower.includes('car') || lower.includes('teacher')) {
+                    addChatMsg('customer', `${pre}The answer is ${c.securityAnswer}.${suf}`);
+                    return;
+                }
+                if (lower.includes('bill') || lower.includes('last bill') || lower.includes('amount')) {
+                    const approx = Math.round(parseFloat(c.lastBillAmount.replace('$', '')));
+                    addChatMsg('customer',
+                        `${pre}I think it was around $${approx}. Let me check... it's ${c.lastBillAmount}.${suf}`);
+                    return;
+                }
+                if (lower.includes('modem') || lower.includes('serial')) {
+                    addChatMsg('customer',
+                        `${pre}The modem serial is ${c.modemSerial}. I'm not sure where to find it on the device.${suf}`);
+                    return;
+                }
+                if (lower.includes('account number') || lower.includes('account #')) {
+                    if (unknownAcct) {
+                        addChatMsg('customer', `${pre}I don't remember my account number.${suf}`);
+                    } else if (App.isWrongAccount && Math.random() < 0.6) {
+                        addChatMsg('customer',
+                            `${pre}I think it's ATT-${Math.floor(Math.random()*90000000)+10000000}... wait, that might not be right.${suf}`
+                            );
+                        App.wrongAccountDetected = true;
+                    } else {
+                        addChatMsg('customer', `${pre}I believe it's ${c.accountNumber}.${suf}`);
+                    }
+                    return;
+                }
+                if (lower.includes('cbr')) { addChatMsg('customer',
+                        `${pre}I don't know what that is. Should I call that number?${suf}`); return; }
+                const generic = {
+                    'Calm': ['Of course.', 'I understand.', 'Thank you for helping.'],
+                    'Confused': ['Wait, what do you need again?', 'I\'m not sure I understand.'],
+                    'Neutral': ['Alright.', 'Okay.', 'Go ahead.'],
+                    'Slightly frustrated': ['Can we please get this done?', 'How much longer?'],
+                    'Angry': ['This always happens!', 'Every call is the same runaround.'],
+                    'In a hurry': ['I\'ve got 5 minutes.', 'What\'s the fastest way?'],
+                    'Impatient': ['I\'ve been waiting forever.', 'Can we hurry this up?'],
+                };
+                const arr = generic[p] || generic['Neutral'];
+                addChatMsg('customer', `${pre}${arr[Math.floor(Math.random()*arr.length)]}${suf}`);
+            }
+
+            function submitPasscode() {
+                const val = document.getElementById('passcodeInput').value.trim();
+                if (!val || val.length !== 4) { toast('Enter 4-digit passcode.'); return; }
+                const forgotPC = App.subScenario === 'B1' || (App.hasMemoryFailure && Math.random() < 0.7);
+                if (forgotPC) { toast('Customer forgot passcode. Use OTP or BB Tech.'); return; }
+                App.passcodeAttempts++;
+                if (val === App.customerData.passCode) {
+                    App.authState = 'success';
+                    App.correctActions.push('Passcode verified successfully.');
+                    authenticateSuccess();
+                } else {
+                    if (App.passcodeAttempts >= 3) {
+                        toast('❌ Max passcode attempts. Use OTP or BB Tech.');
+                        App.mistakes.push('Failed passcode verification 3 times.');
+                    } else { toast(`❌ Incorrect. ${3-App.passcodeAttempts} attempts remaining.`); }
+                }
+                document.getElementById('passcodeInput').value = '';
+            }
+
+            function sendOTP() {
+                const sel = document.getElementById('otpMethodSelect');
+                if (!sel.value) { toast('Select contact method.'); return; }
+                App.otpSent = true;
+                App.otpValue = String(Math.floor(Math.random() * 900000) + 100000);
+                document.getElementById('otpStatus').textContent = '✅ OTP sent.';
+                document.getElementById('otpStatus').style.color = 'var(--success)';
+                addChatMsg('system', '📤 OTP sent to customer\'s verified contact.');
+                addChatMsg('customer', 'Okay, I got a code on my phone.');
+                toast('📤 OTP sent.');
+            }
+
+            function submitOTP() {
+                const val = document.getElementById('otpInput').value.trim();
+                if (!val || val.length !== 6) { toast('Enter 6-digit OTP.'); return; }
+                if (!App.otpSent) { toast('Send OTP first.'); return; }
+                App.otpAttempts++;
+                if (val === App.otpValue) {
+                    App.authState = 'success';
+                    App.correctActions.push('OTP verified successfully.');
+                    authenticateSuccess();
+                } else {
+                    if (App.otpAttempts >= 3) {
+                        toast('❌ Max OTP attempts. Use BB Tech.');
+                        App.mistakes.push('Failed OTP verification 3 times.');
+                    } else { toast(`❌ Incorrect. ${3-App.otpAttempts} attempts remaining.`); }
+                }
+                document.getElementById('otpInput').value = '';
+            }
+
+            function authenticateSuccess() {
+                App.authState = 'success';
+                updateCustomerBar(App.customerData);
+                updateStatusDot('Authenticated ✅');
+                showScreen('screen-success');
+                setTimeout(() => {
+                    const pcBlock = document.getElementById('passcodeChangeBlock');
+                    if (pcBlock) pcBlock.classList.remove('hidden');
+                    const cpo = document.getElementById('changePasscodeOffer');
+                    if (cpo) cpo.classList.add('hidden');
+                }, 100);
+            }
+
+            function handleOwnerConfirm(yes) {
+                App.ownerConfirmed = yes;
+                if (yes) {
+                    const el = document.getElementById('changePasscodeOffer');
+                    if (el) el.classList.remove('hidden');
+                    App.correctActions.push('Confirmed account ownership before passcode change.');
+                } else {
+                    const el = document.getElementById('passcodeChangeBlock');
+                    if (el) el.classList.add('hidden');
+                    toast('Continuing without passcode change.');
+                }
+            }
+
+            function changePasscode() {
+                App.customerData.passCode = String(Math.floor(Math.random() * 9000) + 1000);
+                App.passcodeChanged = true;
+                App.correctActions.push('Passcode changed.');
+                toast('✅ Passcode changed.');
+                const el = document.getElementById('changePasscodeOffer');
+                if (el) el.classList.add('hidden');
+            }
+
+            function finishSession() {
+                const el = document.getElementById('passcodeChangeBlock');
+                if (el) el.classList.add('hidden');
+                toast('Session complete.');
+            }
+
+            function renderBBTech() {
+                const inner = document.getElementById('bbTechInner');
+                if (!inner) return;
+                const st = App.bbTechState;
+                const c = App.customerData;
+                let html = '';
+                if (st === 'start') {
+                    html = `<div style="font-weight:600;color:#fff;margin-bottom:4px;">Passcode check</div>
+                    <div class="btn-row"><button class="btn btn-success btn-sm" data-action="bb-have-pass">✅ Yes</button><button class="btn btn-danger btn-sm" data-action="bb-no-pass">❌ No</button></div>`;
+                } else if (st === 'have_passcode') {
+                    html =
+                        `<input type="password" class="input-field" id="bbPassInp" placeholder="4-digit code"><button class="btn btn-blue btn-block btn-sm" data-action="bb-check-pass">Verify</button><div id="bbPassRes" style="font-size:10px;margin-top:3px;"></div>`;
+                } else if (st === 'no_passcode') {
+                    html =
+                        `<div style="font-weight:600;color:#fff;margin-bottom:3px;">Sec question:</div><em style="font-size:10px;color:var(--text-secondary);">"${c.securityQuestion}"</em>
+                    <input type="text" class="input-field" id="bbSecInp" placeholder="Answer">
+                    <div class="btn-row"><button class="btn btn-blue btn-sm" data-action="bb-submit-sec">Submit</button><button class="btn btn-outline btn-sm" data-action="bb-forgot-sec">Forgot answer</button></div><div id="bbSecRes" style="font-size:10px;"></div>`;
+                } else if (st === 'security_correct') {
+                    html =
+                        `<div style="color:var(--success);font-weight:600;">✅ Correct</div><button class="btn btn-success btn-block btn-sm" data-action="bb-auth-success">Authenticate</button>`;
+                } else if (st === 'security_wrong') {
+                    html =
+                        `<div style="color:var(--danger);font-weight:600;">❌ Incorrect</div><div class="btn-row"><button class="btn btn-warning btn-sm" data-action="bb-final-verif">Final Verification</button><button class="btn btn-danger btn-sm" data-action="bb-call-cbr">Call CBR</button></div>`;
+                } else if (st === 'final_verif') {
+                    html =
+                        `<div style="font-weight:600;color:#fff;">Final Verification</div><input type="text" class="input-field" id="bbBillInp" placeholder="Last bill amount"><input type="text" class="input-field" id="bbModemInp" placeholder="Modem serial"><button class="btn btn-blue btn-block btn-sm" data-action="bb-check-final">Check</button><div id="bbFinalRes" style="font-size:10px;margin-top:3px;"></div>`;
+                } else if (st === 'cbr_call') {
+                    html =
+                        `<div style="color:var(--att-orange);font-weight:600;text-align:center;">CBR Call</div><p style="font-size:10px;color:var(--text-secondary);text-align:center;">Instruct customer to call CBR number.<br><strong>Do NOT disclose the number.</strong><br><small>(Sim: unreachable)</small></p><div class="btn-row"><button class="btn btn-warning btn-sm" data-action="bb-goto-final">Proceed to Final Verification</button><button class="btn btn-danger btn-sm" data-action="bb-end-fail">End</button></div>`;
+                }
+                inner.innerHTML = html;
+            }
+
+            function handleBBTechAction(action) {
+                switch (action) {
+                    case 'bb-have-pass':
+                        App.bbTechState = 'have_passcode';
+                        renderBBTech();
+                        break;
+                    case 'bb-no-pass':
+                        App.bbTechState = 'no_passcode';
+                        renderBBTech();
+                        break;
+                    case 'bb-check-pass':
+                        const passVal = document.getElementById('bbPassInp')?.value || '';
+                        const passRes = document.getElementById('bbPassRes');
+                        if (passVal === App.customerData.passCode) {
+                            if (passRes) passRes.innerHTML =
+                                '<span style="color:var(--success);">✅ Correct</span>';
+                            App.bbTechState = 'security_correct';
+                            App.correctActions.push('BB Tech: Passcode verified.');
+                        } else {
+                            if (passRes) passRes.innerHTML =
+                                '<span style="color:var(--danger);">❌ Incorrect</span>';
+                            App.bbTechState = 'no_passcode';
+                            App.mistakes.push('BB Tech: Wrong passcode.');
+                        }
+                        renderBBTech();
+                        break;
+                    case 'bb-submit-sec':
+                        const secVal = document.getElementById('bbSecInp')?.value.trim() || '';
+                        const secRes = document.getElementById('bbSecRes');
+                        if (secVal.toLowerCase() === App.customerData.securityAnswer.toLowerCase()) {
+                            if (secRes) secRes.innerHTML =
+                                '<span style="color:var(--success);">✅ Correct</span>';
+                            App.bbTechState = 'security_correct';
+                            App.correctActions.push('BB Tech: Security answer correct.');
+                        } else {
+                            if (secRes) secRes.innerHTML =
+                                '<span style="color:var(--danger);">❌ Incorrect</span>';
+                            App.bbTechState = 'security_wrong';
+                            App.mistakes.push('BB Tech: Wrong security answer.');
+                        }
+                        renderBBTech();
+                        break;
+                    case 'bb-forgot-sec':
+                        App.bbTechState = 'security_wrong';
+                        App.mistakes.push('BB Tech: Customer forgot answer.');
+                        renderBBTech();
+                        break;
+                    case 'bb-auth-success':
+                        App.authState = 'success';
+                        App.correctActions.push('BB Tech authentication successful.');
+                        authenticateSuccess();
+                        break;
+                    case 'bb-final-verif':
+                        App.bbTechState = 'final_verif';
+                        renderBBTech();
+                        break;
+                    case 'bb-call-cbr':
+                        App.cbrCallAttempted = true;
+                        App.correctActions.push('BB Tech: Attempted CBR call.');
+                        App.bbTechState = 'cbr_call';
+                        renderBBTech();
+                        break;
+                    case 'bb-check-final':
+                        const billVal = document.getElementById('bbBillInp')?.value.trim() || '';
+                        const modemVal = document.getElementById('bbModemInp')?.value.trim().toUpperCase() || '';
+                        const realBill = App.customerData.lastBillAmount.replace('$', '');
+                        const billMatch = Math.abs(parseFloat(billVal) - parseFloat(realBill)) <= 2;
+                        const modemMatch = modemVal === App.customerData.modemSerial.toUpperCase();
+                        const finalRes = document.getElementById('bbFinalRes');
+                        if (billMatch && modemMatch) {
+                            if (finalRes) finalRes.innerHTML =
+                                '<span style="color:var(--success);">✅ Both match</span>';
+                            App.authState = 'success';
+                            App.correctActions.push('Final verification passed.');
+                            authenticateSuccess();
+                        } else {
+                            if (finalRes) finalRes.innerHTML =
+                                '<span style="color:var(--danger);">❌ Mismatch</span>';
+                            App.bbTechState = 'cbr_call';
+                            App.mistakes.push('Final verification failed.');
+                            renderBBTech();
+                        }
+                        break;
+                    case 'bb-goto-final':
+                        App.bbTechState = 'final_verif';
+                        App.correctActions.push('CBR unreachable — proceeding to final verification.');
+                        renderBBTech();
+                        break;
+                    case 'bb-end-fail':
+                        App.authState = 'failed';
+                        showScreen('screen-failure');
+                        updateStatusDot('Failed 🔒');
+                        setTimeout(() => {
+                            const fr = document.getElementById('failureReason');
+                            if (fr) fr.textContent = 'CBR verification required.';
+                        }, 100);
+                        break;
+                }
+            }
+
+            function populateEvaluation() {
+                const el = document.getElementById('evalContent');
+                if (!el) return;
+                let score = 100;
+                score -= App.securityViolations.length * 25;
+                score -= App.mistakes.length * 7;
+                score -= App.warnings.length * 4;
+                score += App.correctActions.length * 5;
+                if (App.wrongAccountDetected && App.searchDone) score += 10;
+                score = Math.max(0, Math.min(100, Math.round(score)));
+                const cls = score >= 75 ? 'good' : score >= 45 ? 'ok' : 'poor';
+                let html = `<div class="eval-score-ring ${cls}">${score}%</div>`;
+                html +=
+                    `<p style="text-align:center;font-weight:600;color:#fff;font-size:11px;">${score>=75?'Excellent!🎉':score>=45?'Needs Practice📚':'Remedial Training Needed⚠️'}</p>`;
+                html +=
+                    `<div class="divider"></div><h4 style="font-size:10px;margin-bottom:4px;">✅ Correct (${App.correctActions.length})</h4>`;
+                App.correctActions.forEach(a => html += `<div class="eval-item pos">✔️ ${a}</div>`);
+                if (!App.correctActions.length) html += '<div class="eval-item warn">No correct actions.</div>';
+                html +=
+                    `<div class="divider"></div><h4 style="font-size:10px;margin-bottom:4px;">❌ Mistakes (${App.mistakes.length})</h4>`;
+                App.mistakes.forEach(m => html += `<div class="eval-item neg">✖️ ${m}</div>`);
+                if (!App.mistakes.length) html += '<div class="eval-item pos">✔️ No mistakes.</div>';
+                html +=
+                    `<div class="divider"></div><h4 style="font-size:10px;margin-bottom:4px;">⚠️ Warnings (${App.warnings.length})</h4>`;
+                App.warnings.forEach(w => html += `<div class="eval-item warn">⚠️ ${w}</div>`);
+                if (!App.warnings.length) html += '<div class="eval-item pos">✔️ No warnings.</div>';
+                html += `<div class="divider"></div><h4 style="font-size:10px;margin-bottom:4px;">💡 Suggestions</h4>`;
+                if (App.passcodeAttempts > 2) html +=
+                    '<div class="eval-item warn">💡 After 2 failed passcode attempts, switch to OTP or BB Tech.</div>';
+                if (App.hasMemoryFailure && !App.bbTechActive && App.authState !== 'success') html +=
+                    '<div class="eval-item warn">💡 For memory failures, BB Tech with final verification works best.</div>';
+                html +=
+                    `<div class="divider"></div><div style="font-size:9px;color:var(--text-secondary);line-height:1.5;">Scenario: <strong>${App.scenario?App.scenario.name+' ('+App.scenario.code+')':'N/A'}</strong> | Result: <strong style="color:${App.authState==='success'?'var(--success)':'var(--danger)'};">${App.authState==='success'?'SUCCESS':'FAILED'}</strong></div>`;
+                el.innerHTML = html;
+            }
+
+            function showEvaluation() {
+                showScreen('screen-evaluation');
+            }
+
+            function startNewSimulation() {
+                resetApp();
+                const cust = genCustomer();
+                const rand = Math.random();
+                let scenario;
+                if (rand < 0.5) scenario = scenarios.find(s => s.code === 'A2');
+                else if (rand < 0.8) scenario = scenarios.find(s => s.code === 'A3');
+                else scenario = scenarios.find(s => s.code === 'A1');
+                const sub = subScenarios[Math.floor(Math.random() * subScenarios.length)];
+                const pers = personalities[Math.floor(Math.random() * personalities.length)];
+                const isFam = Math.random() < 0.2;
+                const wrongAcc = Math.random() < 0.25;
+                const memFail = Math.random() < 0.35;
+                App.customerData = cust;
+                App.scenario = scenario;
+                App.subScenario = sub;
+                App.personality = pers;
+                App.isFamily = isFam;
+                App.familyRel = isFam ? familyRels[Math.floor(Math.random() * 4)] : null;
+                App.isWrongAccount = wrongAcc;
+                App.hasMemoryFailure = memFail;
+                App.active = true;
+                App.ivrAuthenticated = (scenario.code === 'A1');
+                if (wrongAcc) { App.wrongAccountData = genCustomer();
+                    updateCustomerBar(App.wrongAccountData); } else updateCustomerBar(cust);
+                const custId = cust.accountNumber.replace('ATT-', '').slice(0, 6);
+                setTimeout(() => {
+                    const callerDisplay = document.getElementById('callerIdDisplay');
+                    if (callerDisplay) callerDisplay.textContent = `${custId}-${scenario.code}${sub}`;
+                }, 50);
+                updateStatusDot('Session Active');
+                showScreen('screen-incoming');
+                document.getElementById('inlineSearchInput').value = '';
+                document.getElementById('inlineSearchResult').style.display = 'none';
+                toast('🆕 New simulation ready.');
+            }
+
+            function answerCall() {
+                if (!App.active) return;
+                showScreen('screen-active');
+            }
+
+            function performInlineSearch() {
+                const input = document.getElementById('inlineSearchInput');
+                const term = input.value.trim();
+                const resultEl = document.getElementById('inlineSearchResult');
+                if (!term || !App.customerData) {
+                    if (resultEl) resultEl.style.display = 'none';
+                    return;
+                }
+                const c = App.customerData;
+                let found = false;
+                if (term.toUpperCase() === c.accountNumber.toUpperCase()) found = true;
+                else if (term.replace(/\D/g, '') === c.phoneRaw || term.replace(/\D/g, '') === c.phoneRaw.slice(-4))
+                    found = true;
+                if (found) {
+                    App.searchDone = true;
+                    App.correctActions.push('Account located via inline search.');
+                    updateCustomerBar(c);
+                    if (resultEl) {
+                        resultEl.textContent = '✅ Account found.';
+                        resultEl.style.color = 'var(--success)';
+                        resultEl.style.display = 'block';
+                    }
+                } else {
+                    if (resultEl) {
+                        resultEl.textContent = '❌ Account not found.';
+                        resultEl.style.color = 'var(--danger)';
+                        resultEl.style.display = 'block';
+                    }
+                }
+                input.value = '';
+            }
+
+            function generateDetailedPrompt() {
+                const c = App.customerData;
+                if (!c) return 'No active session. Please start a simulation first.';
+                const forgotPC = App.subScenario === 'B1' || App.hasMemoryFailure;
+                const unknownAcct = (App.scenario && App.scenario.code === 'A3' && !App.searchDone) || App.hasMemoryFailure;
+                const memFail = App.hasMemoryFailure;
+                const wrongAcct = App.isWrongAccount;
+                const family = App.isFamily;
+                const scenarioName = App.scenario ? App.scenario.name + ' (' + App.scenario.code + ')' : 'N/A';
+                const pers = App.personality || 'Neutral';
+                let scenarioDesc = '';
+                if (App.scenario && App.scenario.code === 'A1')
+                    scenarioDesc = 'Customer completed IVR verification. Agent only needs to confirm name.';
+                else if (App.scenario && App.scenario.code === 'A2')
+                    scenarioDesc = 'Partial IVR. Info masked. Agent must verify via passcode or OTP.';
+                else if (App.scenario && App.scenario.code === 'A3')
+                    scenarioDesc =
+                    'Customer skipped IVR entirely. Agent must search for the account first using account number, phone, or address.';
+                const personalityMap = {
+                    'Calm': 'You are calm and cooperative. You speak politely and use courteous language.',
+                    'Confused': 'You are confused about technology. You mix up terms and ask for clarification.',
+                    'Neutral': 'You are straightforward and matter-of-fact.',
+                    'Slightly frustrated': 'You are mildly annoyed. You sigh occasionally but remain cooperative.',
+                    'Angry': 'You are angry about previous service issues. You raise your voice, complain, and are confrontational.',
+                    'In a hurry': 'You are in a rush and want everything done quickly.',
+                    'Impatient': 'You are impatient and want quick service. You sigh, interrupt, and express frustration.',
+                };
+                return `You are acting as a customer calling internet support for AT&T.
+
+        CUSTOMER INFORMATION (INTERNAL - DO NOT REVEAL UNLESS AUTHENTICATED):
+        - Account Number: ${unknownAcct ? 'CUSTOMER DOES NOT KNOW ACCOUNT NUMBER' : c.accountNumber}
+        - First Name: ${c.firstName}
+        - Last Name: ${c.lastName}
+        - Phone Number: ${c.phoneNumber}
+        - Email: ${c.email}
+        - Address: ${c.address}
+        - Pass Code: ${forgotPC ? 'CUSTOMER DOES NOT REMEMBER PASS CODE — MUST SAY "I forgot my pass code"' : c.passCode}
+        - Security Question: ${c.securityQuestion}
+        - Security Answer: ${c.securityAnswer}
+        - Modem Serial Number: ${c.modemSerial}
+        - Last Bill Amount: ${c.lastBillAmount}
+        - CBR Number: ${c.cbrNumber}
+
+        SCENARIO: ${scenarioName}
+        ${scenarioDesc}
+        ${family ? 'FAMILY RELATION: ' + App.familyRel + ' — You are NOT the account holder.' : 'You ARE the account holder.'}
+        ${wrongAcct ? 'WRONG ACCOUNT SCENARIO: Agent may have opened wrong account. Verify carefully.' : ''}
+        ${memFail ? 'MEMORY FAILURE: Cannot recall passcode or account number. Knows approximate bill amount and modem serial.' : ''}
+
+        CUSTOMER PERSONALITY: ${pers}
+        ${personalityMap[pers] || ''}
+
+        AUTHENTICATION RULES:
+        * Act as a real customer calling for internet support.
+        * Do NOT reveal private information unless the agent has properly authenticated you.
+        * Answer only what the agent specifically asks.
+        * Follow the authentication scenario naturally.
+        * Do NOT help the agent authenticate you.
+        * Maintain your assigned personality throughout the call.
+        * If asked for pass code and you know it, provide it. If forgotten, say "I forgot my pass code."
+        * Never volunteer pass code, security answer, or account details unprompted.
+        * If authentication fails repeatedly, express appropriate frustration.`;
+            }
+
+            function copySimulationPrompt() {
+                const prompt = generateDetailedPrompt();
+                if (!prompt || prompt === 'No active session. Please start a simulation first.') {
+                    toast('Start a simulation first.');
+                    return;
+                }
+                navigator.clipboard.writeText(prompt).then(() => {
+                    toast('✅ Detailed AI Prompt copied!');
+                    App.actionLog.push({ action: 'copied_prompt', time: Date.now() });
+                }).catch(() => {
+                    const ta = document.createElement('textarea');
+                    ta.value = prompt;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    toast('✅ Prompt copied!');
+                });
+            }
+
+            function performSearch() {
+                const term = document.getElementById('searchInput').value.trim();
+                if (!term || !App.customerData) return;
+                const c = App.customerData;
+                let found = false;
+                if (term.toUpperCase() === c.accountNumber.toUpperCase()) found = true;
+                else if (term.replace(/\D/g, '') === c.phoneRaw || term.replace(/\D/g, '') === c.phoneRaw.slice(-4))
+                    found = true;
+                else if (c.address.toLowerCase().includes(term.toLowerCase())) found = true;
+                else if (c.lastName.toLowerCase().includes(term.toLowerCase())) found = true;
+                document.getElementById('searchResult').textContent = found ? '✅ Account found.' : '❌ Not found.';
+                if (found) {
+                    App.searchDone = true;
+                    App.correctActions.push('Account located via search.');
+                    document.getElementById('searchOverlay').classList.remove('show');
+                    updateCustomerBar();
+                }
+            }
+
+            function handleGlobalClick(e) {
+                const target = e.target.closest('[data-action]');
+                if (!target) return;
+                const action = target.getAttribute('data-action');
+                e.preventDefault();
+
+                switch (action) {
+                    case 'new-call':
+                    case 'start-simulation':
+                        startNewSimulation();
+                        break;
+                    case 'answer-call':
+                        answerCall();
+                        break;
+                    case 'inline-search':
+                        performInlineSearch();
+                        break;
+                    case 'send-chat':
+                        sendChatMessage();
+                        break;
+                    case 'submit-passcode':
+                        submitPasscode();
+                        break;
+                    case 'send-otp':
+                        sendOTP();
+                        break;
+                    case 'submit-otp':
+                        submitOTP();
+                        break;
+                    case 'copy-prompt':
+                        copySimulationPrompt();
+                        break;
+                    case 'tab-passcode':
+                        switchTab('passcode');
+                        break;
+                    case 'tab-otp':
+                        switchTab('otp');
+                        break;
+                    case 'tab-bbtech':
+                        switchTab('bbtech');
+                        break;
+                    case 'cbr-yes':
+                        document.getElementById('cbrOverlay').classList.remove('show');
+                        App.authState = 'success';
+                        App.correctActions.push('CBR permission obtained.');
+                        authenticateSuccess();
+                        break;
+                    case 'cbr-no':
+                        document.getElementById('cbrOverlay').classList.remove('show');
+                        App.authState = 'failed';
+                        showScreen('screen-failure');
+                        updateStatusDot('Failed 🔒');
+                        setTimeout(() => {
+                            const fr = document.getElementById('failureReason');
+                            if (fr) fr.textContent = 'CBR permission denied.';
+                        }, 100);
+                        break;
+                    case 'close-search':
+                        document.getElementById('searchOverlay').classList.remove('show');
+                        break;
+                    case 'search-submit':
+                        performSearch();
+                        break;
+                    case 'search-chip':
+                        document.querySelectorAll('#searchChips .search-chip').forEach(c => c.classList.remove(
+                            'selected'));
+                        target.classList.add('selected');
+                        break;
+                    case 'owner-yes':
+                        handleOwnerConfirm(true);
+                        break;
+                    case 'owner-no':
+                        handleOwnerConfirm(false);
+                        break;
+                    case 'change-passcode':
+                        changePasscode();
+                        break;
+                    case 'finish-session':
+                        finishSession();
+                        break;
+                    case 'view-evaluation':
+                        showEvaluation();
+                        break;
+                    case 'reset-simulation':
+                        resetApp();
+                        showScreen('screen-start');
+                        updateStatusDot('Ready');
+                        break;
+                    default:
+                        if (action.startsWith('bb-')) {
+                            handleBBTechAction(action);
+                        }
+                        break;
+                }
+            }
+
+            function init() {
+                showScreen('screen-start');
+                updateStatusDot('Ready');
+                document.getElementById('mobileContainer').addEventListener('click', handleGlobalClick);
+                document.getElementById('chatInput').addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') sendChatMessage();
+                });
+                document.getElementById('inlineSearchInput').addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') performInlineSearch();
+                });
+                renderBBTech();
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', init);
+            } else {
+                init();
+            }
+        })();
+    </script>
+</body>
+</html>
